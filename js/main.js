@@ -391,11 +391,26 @@ $('#skillCats').innerHTML = SKILL_CATS.map((c, i) => `
 /* ==================================================================
    7. REVEAL / COUNTERS / BARS (IntersectionObserver)
    ================================================================== */
+/* A skill meter is 8px tall, which is too small a target to hang an
+   IntersectionObserver off reliably: a fast scroll can carry it past the
+   threshold before a frame is delivered, and the bar never fills. The row it
+   sits in is ~67px and already reveals correctly, so the fill is choreographed
+   with that reveal instead. It also reads better, as one motion. */
+function fillMeter(row) {
+  const bar = row.querySelector('.sb-fill');
+  if (!bar || bar.dataset.filled) return;
+  bar.dataset.filled = '1';
+  requestAnimationFrame(() => {
+    bar.style.clipPath = `inset(0 ${100 - bar.dataset.fill}% 0 0)`;
+  });
+}
+
 const io = new IntersectionObserver((entries) => {
   entries.forEach(en => {
     if (!en.isIntersecting) return;
     const el = en.target;
     el.classList.add('in');
+    if (el.classList.contains('sb')) fillMeter(el);
     if (el.classList.contains('tl-item')) el.classList.add('in');
     if (el.hasAttribute('data-split')) el.classList.add('in');
     io.unobserve(el);
@@ -427,15 +442,6 @@ const countIO = new IntersectionObserver(entries => {
 }, { threshold: 0.6 });
 $$('[data-count]').forEach(el => countIO.observe(el));
 
-/* skill bars */
-const barIO = new IntersectionObserver(entries => {
-  entries.forEach(en => {
-    if (!en.isIntersecting) return;
-    en.target.style.clipPath = `inset(0 ${100 - en.target.dataset.fill}% 0 0)`;
-    barIO.unobserve(en.target);
-  });
-}, { threshold: 0.4 });
-$$('.sb-fill').forEach(el => barIO.observe(el));
 
 /* ==================================================================
    8. 3D TILT (shadow follows cursor)
@@ -672,6 +678,14 @@ rotateRoles();
 $$('.hero .reveal').forEach((el, i) => setTimeout(() => el.classList.add('in'), 60 + i * 70));
 
 requestAnimationFrame(frame);              // cursor + parallax loop (cheap)
+
+/* Meters already in view at load (short page, deep link, restored scroll
+   position) fill without waiting for a scroll event. */
+requestAnimationFrame(() => {
+  $$('.sb').forEach(row => {
+    if (row.getBoundingClientRect().top < innerHeight) fillMeter(row);
+  });
+});
 
 /* ---- phase 2: after the first paint ---- */
 function deferBackground() {
