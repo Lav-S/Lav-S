@@ -207,7 +207,10 @@ body.cur-grow .cursor-dot{ opacity:0; }
   transition:opacity var(--t-panel) var(--ease-out), transform var(--t-panel) var(--ease-out);
 }
 .scroll-orb.on{ opacity:1; transform:none; }
-.scroll-orb svg{ position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); }
+/* Direct child only: this is the progress ring. A descendant selector here
+   also caught the arrow icon inside the button, absolutely positioning it into
+   the corner and rotating it a quarter turn. */
+.scroll-orb > svg{ position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); }
 .so-track{ fill:none; stroke:var(--line); stroke-width:3; }
 .so-bar{ fill:none; stroke:var(--accent); stroke-width:3; stroke-linecap:round; stroke-dasharray:151; stroke-dashoffset:151; }
 .so-top{ color:var(--text-2); width:100%; height:100%; border-radius:50%;
@@ -230,14 +233,47 @@ body.cur-grow .cursor-dot{ opacity:0; }
 }
 .nav.shrunk{ height:60px; width:min(900px, calc(100% - 32px)); box-shadow:var(--d-raise-s); }
 .nav-brand{ flex:none; }
+/* The brand carries the full name while there is room for it, and collapses to
+   the initials once the bar shrinks on scroll. Both labels sit in the same grid
+   cell and cross-fade; the pill's own width is what animates, so the two never
+   reflow past each other. Widths are explicit because `auto` is not animatable,
+   and the pill clips so a missing webfont cannot spill the name out of it. */
 .brand-mark{
-  width:44px; height:44px; border-radius:14px; display:grid; place-items:center;
-  font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; letter-spacing:.04em;
+  width:158px; height:44px; border-radius:var(--r-pill);
+  /* minmax(0,1fr) pins the track to the pill width. With an auto track it sized
+     to the widest label, so once collapsed the initials were centred inside the
+     full name's width and clipped straight out of the 40px box. */
+  display:grid; grid-template-columns:minmax(0,1fr); place-items:center; overflow:hidden;
+  font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; letter-spacing:.01em;
   background:linear-gradient(135deg,var(--accent),var(--accent-3));
   -webkit-background-clip:text; background-clip:text; color:transparent;
-  transition:transform var(--t-hover) var(--ease-out), box-shadow var(--t-hover) var(--ease-out);
+  transition:width var(--t-panel) var(--ease-in-out),
+             height var(--t-panel) var(--ease-in-out),
+             border-radius var(--t-panel) var(--ease-in-out),
+             transform var(--t-hover) var(--ease-out),
+             box-shadow var(--t-hover) var(--ease-out);
 }
+/* The two labels share one grid cell, so a simple cross-fade would ghost them
+   through each other ("Lavne LS t Sidhu"). They are sequenced instead: whichever
+   label is leaving fades out first, and the arriving one waits for it. */
+.brand-full,
+.brand-short{ grid-area:1/1; white-space:nowrap; }
+.brand-full{ transition:opacity 120ms var(--ease-out) 130ms; }
+.brand-short{ opacity:0; letter-spacing:.04em; transition:opacity 120ms var(--ease-out); }
+
+.nav.shrunk .brand-mark{ width:40px; height:40px; border-radius:13px; }
+.nav.shrunk .brand-full{ opacity:0; transition:opacity 120ms var(--ease-out); }
+.nav.shrunk .brand-short{ opacity:1; transition:opacity 120ms var(--ease-out) 130ms; }
+
 .nav-brand:hover .brand-mark{ box-shadow:var(--d-raise-s); }
+
+/* Narrow bars never have room for the full name, shrunk or not. */
+@media (max-width:620px){
+  .brand-mark,
+  .nav.shrunk .brand-mark{ width:40px; height:40px; border-radius:13px; }
+  .brand-full{ opacity:0; }
+  .brand-short{ opacity:1; }
+}
 
 .nav-links{ position:relative; display:flex; gap:2px; margin-left:auto; align-items:center; }
 .nav-links a{

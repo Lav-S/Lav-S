@@ -36,8 +36,8 @@
 <div class="cursor-ring" id="cursorRing" aria-hidden="true"><span class="cursor-label" id="cursorLabel"></span></div>
 
 <!-- ============ SCROLL PROGRESS ============ -->
-<div class="scroll-orb neu-raised" id="scrollOrb" aria-hidden="true">
-  <svg viewBox="0 0 60 60">
+<div class="scroll-orb neu-raised" id="scrollOrb">
+  <svg viewBox="0 0 60 60" aria-hidden="true">
     <circle class="so-track" cx="30" cy="30" r="24"></circle>
     <circle class="so-bar" id="soBar" cx="30" cy="30" r="24"></circle>
   </svg>
@@ -49,8 +49,11 @@
 <!-- ============ NAV ============ -->
 <header class="nav-wrap" id="navWrap">
   <nav class="nav neu-raised" id="nav">
-    <a href="#hero" class="nav-brand magnetic" data-cursor="home">
-      <span class="brand-mark neu-pressed">LS</span>
+    <a href="#hero" class="nav-brand magnetic" data-cursor="home" aria-label="Lavneet Sidhu, back to top">
+      <span class="brand-mark neu-pressed">
+        <span class="brand-full">Lavneet Sidhu</span>
+        <span class="brand-short">LS</span>
+      </span>
     </a>
     <ul class="nav-links" id="navLinks">
       <li><a href="#about" data-nav>About</a></li>
