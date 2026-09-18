@@ -247,7 +247,9 @@ if (FINE) {
   document.addEventListener('pointerover', e => {
     const t = e.target.closest(growSel);
     if (!t) return;
-    const label = t.dataset.cursor || (t.classList.contains('proj') ? 'view' : '');
+    /* Only label the cursor when the thing under it actually opens something.
+       Cards with no demo and no repo used to read "view" and lead nowhere. */
+    const label = t.dataset.cursor || (t.classList.contains('proj') && t.querySelector('.p-link') ? 'view' : '');
     cLabel.textContent = label;
     cRing.classList.add('grow');
     document.body.classList.add('cur-grow');
@@ -327,9 +329,28 @@ function linkMarkup(url, label, iconName) {
   return `<a class="p-link" href="${url}" target="_blank" rel="noopener" data-cursor="open">${icon(iconName)}<span>${label}</span></a>`;
 }
 
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+/* Google Drive files play inline through their /preview endpoint. */
+function embedUrl(url) {
+  const drive = String(url).match(/drive\.google\.com\/file\/d\/([\w-]+)/);
+  if (drive) return `https://drive.google.com/file/d/${drive[1]}/preview`;
+  return null;
+}
+
+/* The anchor keeps the real URL, so a middle-click, a modified click, or no
+   JavaScript at all still opens the demo in a new tab. The player is an
+   enhancement on top, not the only way in. */
+function demoMarkup(url, title) {
+  if (!url || String(url).trim() === '' || url === '#') return '';
+  const embed = embedUrl(url);
+  const extra = embed ? ` data-embed="${esc(embed)}" data-demo-title="${esc(title)}" data-cursor="play"` : ' data-cursor="open"';
+  return `<a class="p-link" href="${url}" target="_blank" rel="noopener"${extra}>${icon('play')}<span>Demo</span></a>`;
+}
+
 const grid = $('#projGrid');
 grid.innerHTML = PROJECTS.map((p, i) => {
-  const links = linkMarkup(p.repo, 'Code', 'repo') + linkMarkup(p.demo, 'Demo', 'play');
+  const links = linkMarkup(p.repo, 'Code', 'repo') + demoMarkup(p.demo, p.title);
   return `
   <article class="proj neu-raised reveal tilt" data-reveal="pop" data-tags="${p.tags.join(' ')}" style="transition-delay:${(i % 3) * 0.08}s">
     <div class="p-head">
@@ -712,6 +733,59 @@ document.addEventListener('click', e => {
   const top = t.getBoundingClientRect().top + scrollY - (id === '#hero' ? 0 : 96);
   window.scrollTo({ top, behavior: RM ? 'auto' : 'smooth' });
 });
+
+/* ==================================================================
+   13. DEMO PLAYER
+   ================================================================== */
+const modal = $('#demoModal');
+if (modal) {
+  const frame = $('#demoFrame'), dTitle = $('#demoTitle'), dOut = $('#demoOut'), dClose = $('#demoClose');
+  const panel = $('.dm-panel', modal);
+  let restoreFocus = null;
+
+  function openDemo(embed, href, title) {
+    restoreFocus = document.activeElement;
+    dTitle.textContent = title;
+    dOut.href = href;
+    frame.src = embed;                       // set on open so nothing preloads
+    modal.showModal();
+    document.documentElement.classList.add('modal-open');
+    requestAnimationFrame(() => modal.classList.add('open'));
+  }
+
+  function finishClose() {
+    frame.src = 'about:blank';               // stops playback
+    modal.close();
+    document.documentElement.classList.remove('modal-open');
+    if (restoreFocus && restoreFocus.focus) restoreFocus.focus();
+  }
+
+  function closeDemo() {
+    if (!modal.open) return;
+    modal.classList.remove('open');
+    if (RM) return finishClose();
+    let done = false;
+    const end = e => {
+      if (e.target !== panel || done) return;
+      done = true; panel.removeEventListener('transitionend', end); finishClose();
+    };
+    panel.addEventListener('transitionend', end);
+    setTimeout(() => { if (!done) { done = true; panel.removeEventListener('transitionend', end); finishClose(); } }, 320);
+  }
+
+  document.addEventListener('click', e => {
+    const a = e.target.closest('[data-embed]');
+    if (!a) return;
+    // let the browser handle new-tab intents normally
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    openDemo(a.dataset.embed, a.href, a.dataset.demoTitle || 'Demo');
+  });
+
+  dClose.addEventListener('click', closeDemo);
+  modal.addEventListener('cancel', e => { e.preventDefault(); closeDemo(); });  // Escape
+  modal.addEventListener('click', e => { if (e.target === modal) closeDemo(); }); // backdrop
+}
 
 /* Coming back to the tab: resync the pointer so the parallax doesn't lurch,
    and start the background if rAF was starved while we were hidden (a page

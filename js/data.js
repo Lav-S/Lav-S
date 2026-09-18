@@ -9,7 +9,10 @@
    A slot left as "#" (or omitted) renders no button at all, so the live site
    never shows a dead control. Paste a real URL in and the button appears.
 
-   Heimdall omits both slots on purpose and shows a `note:` status line instead.
+   A `demo` pointing at a Google Drive file plays in a dialog on the page
+   itself. The anchor still carries the Drive URL, so a middle-click, a
+   modified click, or a visitor without JavaScript opens it in a new tab as
+   a normal link.
 
    Example:
        repo : "https://your-host.example/fireroute",
@@ -32,7 +35,8 @@ const PROJECTS = [
       { v: "3.8 m", k: "Horizontal RMSE" }
     ],
     stack: ["Kalman Filtering", "Radar / RF", "EO/IR", "Track Fusion", "ML Classification", "Python"],
-    note: "Company in formation"
+    note: "Company in formation",
+    demo: "https://drive.google.com/file/d/17sTsCKPiyZ4FC_UB6kobVJWh66lpg9gZ/view?usp=sharing"
     /* no repo: proprietary */
   },
   {
@@ -44,7 +48,7 @@ const PROJECTS = [
     desc: "A React Native and Expo mobile app with Mapbox GL JS that routes users between destinations, live fire locations and safe havens uploaded by civilians and first responders. A Node.js and Express backend on MongoDB keeps fire and haven data synchronised across every user in real time.",
     stack: ["React Native", "Expo", "Mapbox GL", "Node.js", "Express", "MongoDB"],
     repo: "#",   // TODO: repository link
-    demo: "#"    // TODO: demo video link
+    demo: "https://drive.google.com/file/d/1aUDxOnGB05-K4Z04NY0BW4j87UNx-bFc/view?usp=sharing"
   },
   {
     title: "Audio to Piano MIDI Transcription Network",
@@ -54,8 +58,7 @@ const PROJECTS = [
     tags: ["ml", "web"],
     desc: "An end-to-end deep-learning system for automatic piano transcription built on a novel CRNN (CNN plus BiLSTM), reaching 82.5% accuracy on the MAESTRO test set with CUDA-optimised training. Data pipelines cover more than 200 hours with augmentation, deployed as a full-stack web app for audio and YouTube transcription.",
     stack: ["PyTorch", "TensorFlow", "CRNN", "BiLSTM", "CUDA", "Full-stack"],
-    repo: "#",   // TODO: repository link
-    demo: "#"    // TODO: demo video link
+    repo: "#"    // TODO: repository link. No demo recording for this one.
   },
   {
     title: "GIS Engine from OpenStreetMap Data",
@@ -65,8 +68,7 @@ const PROJECTS = [
     tags: ["systems"],
     desc: "An accessible geographic information system with advanced pathfinding and hand-tuned data structures for optimal loading, panning and zooming. Written in C++ with OOP, external APIs and parallel programming, plus parking-lot re-routing, dark mode and partial-name search.",
     stack: ["C++", "Pathfinding", "OOP", "Parallelism", "OSM APIs"],
-    repo: "#",   // TODO: repository link
-    demo: "#"    // TODO: demo video link
+    repo: "#"    // TODO: repository link. No demo recording for this one.
   },
   {
     title: "Sudoku on the Altera DE1-SoC",
@@ -77,7 +79,7 @@ const PROJECTS = [
     desc: "A complete Sudoku game written in C on the DE1-SoC FPGA, driving a RISC-V system with processor interrupts for seamless mouse movement and keyboard handling. A double-buffered VGA display gives tear-free rendering over an interrupt-driven architecture with optimised memory mapping.",
     stack: ["C", "DE1-SoC", "RISC-V", "Interrupts", "VGA", "Double Buffer"],
     repo: "#",   // TODO: repository link
-    demo: "#"    // TODO: demo video link
+    demo: "https://drive.google.com/file/d/1r6vlT4VpsEdBMlQSPp_G6xR2SIYj08sa/view?usp=sharing"
   },
   {
     title: "Verilog Beatmaker on the DE1-SoC",
@@ -88,7 +90,7 @@ const PROJECTS = [
     desc: "An analog-style beatmaker implemented entirely in Verilog on a DE1-SoC FPGA, using DRAM for audio storage and a VGA display for sample selection. Includes a microphone-backed karaoke mode with real-time audio processing and direct hardware control.",
     stack: ["Verilog", "DE1-SoC", "DRAM", "VGA", "DSP", "ModelSim"],
     repo: "#",   // TODO: repository link
-    demo: "#"    // TODO: demo video link
+    demo: "https://drive.google.com/file/d/18oPMcl59gB2sJFM-4yONkDsiH62oYdiu/view?usp=sharing"
   },
   {
     title: "CEC Championship Builds",
@@ -99,7 +101,7 @@ const PROJECTS = [
     desc: "The solutions behind the competition run: an AWS-hosted interplanetary navigation system, and an augmented-reality defect-inspection platform built on Unity, React and DynamoDB. Both were engineered under hard time limits.",
     stack: ["AWS", "DynamoDB", "Unity", "AR", "React", "Cloud"],
     repo: "#",   // TODO: repository link
-    demo: "#"    // TODO: demo video link
+    demo: "https://drive.google.com/file/d/1JHzZBSm-gH57M1pSooG-IyAEvYWomVsE/view?usp=sharing"
   }
 ];
 

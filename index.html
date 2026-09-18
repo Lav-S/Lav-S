@@ -5,7 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Lavneet Sidhu, Computer Engineer</title>
 <meta name="description" content="Lavneet Sidhu, Computer Engineering at the University of Toronto. Robotics, Machine Learning, LLMs, embedded systems and full-stack engineering.">
-<meta name="theme-color" content="#e6e9f0">
+<meta name="theme-color" content="#e4e8f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#23262f" media="(prefers-color-scheme: dark)">
+<meta name="author" content="Lavneet Sidhu">
+
+<!-- Link previews. og:url and og:image want absolute URLs, so they are set
+     once the site has its final address. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lavneet Sidhu">
+<meta property="og:title" content="Lavneet Sidhu, Computer Engineer">
+<meta property="og:description" content="Computer Engineering at the University of Toronto. Autonomous robotics, machine learning systems and silicon-adjacent firmware.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Lavneet Sidhu, Computer Engineer">
+<meta name="twitter:description" content="Computer Engineering at the University of Toronto. Autonomous robotics, machine learning systems and silicon-adjacent firmware.">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -517,6 +529,28 @@
     </a>
   </div>
 </footer>
+
+<!-- ============ DEMO PLAYER ============ -->
+<dialog class="demo-modal" id="demoModal" aria-labelledby="demoTitle">
+  <div class="dm-panel neu-raised">
+    <header class="dm-head">
+      <h3 id="demoTitle"></h3>
+      <button class="dm-close neu-raised" id="demoClose" aria-label="Close demo">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+    <div class="dm-frame neu-pressed">
+      <iframe id="demoFrame" title="Project demo" allow="autoplay; fullscreen" allowfullscreen></iframe>
+    </div>
+    <footer class="dm-foot">
+      <span>If the player does not load, open it directly.</span>
+      <a class="dm-out" id="demoOut" href="#" target="_blank" rel="noopener">
+        Open in a new tab
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg>
+      </a>
+    </footer>
+  </div>
+</dialog>
 
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
