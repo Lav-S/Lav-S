@@ -64,6 +64,36 @@ serve.js              local static server
   rule that sizes one also sets `height:auto`. Without that the attribute wins
   as a presentational hint and `aspect-ratio` is ignored.
 
+## Motion system
+
+Revamped against Emil Kowalski's design-engineering skill
+([emilkowalski/skills](https://github.com/emilkowalski/skills)). The rules that
+shaped it, and where they live:
+
+- **Interface motion stays under 300ms.** Durations are tokens in `:root`:
+  `--t-press` 140ms, `--t-hover` 200ms, `--t-pop` 240ms, `--t-panel` 300ms.
+  The only longer values are things seen once per visit (`--t-reveal` 460ms,
+  `--t-hero` 700ms) or deliberately decorative (`--t-photo` 700ms photo zoom,
+  `--t-bar` 900ms skill meters) plus the ambient canvas fade-in.
+- **Stronger curves than the CSS built-ins.** `--ease-out` for entering and
+  exiting, `--ease-in-out` for things moving across the screen (the nav pill,
+  the nav shrink), `--ease-drawer` for the mobile menu. No `ease-in` anywhere:
+  it delays the moment the user is watching most closely.
+- **No bounce.** The old spring-ish curve was removed from every functional
+  control. A portfolio for engineering work should read crisp, not playful.
+- **Press feedback on everything pressable.** `scale(.97)` at 140ms, so the
+  interface confirms it heard the tap.
+- **Hover motion is gated** behind `@media (hover:hover) and (pointer:fine)`
+  (section 26). Touch devices fire `:hover` on tap, which otherwise leaves
+  elements stuck mid-transform after a finger lifts.
+- **Only transform, opacity and clip-path animate.** The skill meters used to
+  animate `width`, which forces layout every frame; they now use
+  `clip-path: inset()`, which composites and leaves the gradient undistorted.
+- **The mobile menu is origin-aware**, scaling from the burger that opens it
+  rather than its own centre, and closes faster than it opens.
+- **Reduced motion is gentle, not off.** Opacity and colour transitions still
+  run so state changes remain legible; everything that moves is dropped.
+
 ## How it works
 
 **Neumorphism.** Everything is one surface colour (`--surface`) lit from the

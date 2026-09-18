@@ -286,7 +286,7 @@ function split(el) {
   [...txt].forEach((ch, i) => {
     const s = document.createElement('span');
     if (ch === ' ') { s.className = 'sp'; s.innerHTML = '&nbsp;'; }
-    else { s.className = 'ch'; s.textContent = ch; s.style.transitionDelay = (i * 0.035) + 's'; }
+    else { s.className = 'ch'; s.textContent = ch; s.style.transitionDelay = Math.min(i * 0.03, 0.42) + 's'; }
     el.appendChild(s);
   });
   el.dataset.done = '1';
@@ -431,7 +431,7 @@ $$('[data-count]').forEach(el => countIO.observe(el));
 const barIO = new IntersectionObserver(entries => {
   entries.forEach(en => {
     if (!en.isIntersecting) return;
-    en.target.style.width = en.target.dataset.fill + '%';
+    en.target.style.clipPath = `inset(0 ${100 - en.target.dataset.fill}% 0 0)`;
     barIO.unobserve(en.target);
   });
 }, { threshold: 0.4 });
