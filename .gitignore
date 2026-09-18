@@ -1,0 +1,18 @@
+# Source material used to build the site, not part of the deployed site.
+# The processed copies that the site actually serves live in assets/.
+*.pdf
+!assets/*.pdf
+*.jpeg
+*.jpg
+*.png
+!assets/img/*
+links.txt
+resume latex.txt
+Project_Heimdall_Whitepaper.txt
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+node_modules/

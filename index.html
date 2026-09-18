@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Lavneet Sidhu, Computer Engineer</title>
+<meta name="description" content="Lavneet Sidhu, Computer Engineering at the University of Toronto. Robotics, Machine Learning, LLMs, embedded systems and full-stack engineering.">
+<meta name="theme-color" content="#e6e9f0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' font-family='system-ui'>◈</text></svg>">
+<script>
+  /* Marks that JS is alive, so the reveal system may start elements hidden.
+     Without this class every .reveal stays visible. If the script fails or is
+     blocked, the page is still fully readable. Inline and first so it applies
+     before the stylesheet paints. */
+  document.documentElement.classList.add('js');
+</script>
+</head>
+<body>
+
+<!-- ============ LIVE BACKGROUND (fades in after first paint) ============ -->
+<div class="bg-stage" aria-hidden="true">
+  <canvas id="bgOrbs"></canvas>
+  <canvas id="bgNet"></canvas>
+  <div class="bg-grid"></div>
+  <div class="bg-grain"></div>
+  <div class="bg-vignette"></div>
+</div>
+
+<!-- ============ CURSOR ============ -->
+<div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+<div class="cursor-ring" id="cursorRing" aria-hidden="true"><span class="cursor-label" id="cursorLabel"></span></div>
+
+<!-- ============ SCROLL PROGRESS ============ -->
+<div class="scroll-orb neu-raised" id="scrollOrb" aria-hidden="true">
+  <svg viewBox="0 0 60 60">
+    <circle class="so-track" cx="30" cy="30" r="24"></circle>
+    <circle class="so-bar" id="soBar" cx="30" cy="30" r="24"></circle>
+  </svg>
+  <button class="so-top" id="toTop" aria-label="Back to top">
+    <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg>
+  </button>
+</div>
+
+<!-- ============ NAV ============ -->
+<header class="nav-wrap" id="navWrap">
+  <nav class="nav neu-raised" id="nav">
+    <a href="#hero" class="nav-brand magnetic" data-cursor="home">
+      <span class="brand-mark neu-pressed">LS</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#about" data-nav>About</a></li>
+      <li><a href="#experience" data-nav>Experience</a></li>
+      <li><a href="#projects" data-nav>Projects</a></li>
+      <li><a href="#skills" data-nav>Skills</a></li>
+      <li><a href="#awards" data-nav>Awards</a></li>
+      <li><a href="#contact" data-nav>Contact</a></li>
+      <span class="nav-pill" id="navPill"></span>
+    </ul>
+    <button class="theme-toggle neu-raised" id="themeToggle" aria-label="Toggle colour theme">
+      <span class="tt-knob neu-raised">
+        <svg class="ic tt-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/></svg>
+        <svg class="ic tt-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+      </span>
+    </button>
+    <button class="burger neu-raised" id="burger" aria-label="Menu"><i></i><i></i><i></i></button>
+  </nav>
+</header>
+
+<main id="main">
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="hero">
+  <div class="hero-depth">
+    <div class="float-chip neu-raised" data-depth="0.055" style="--x:8%;  --y:20%;">ROS2</div>
+    <div class="float-chip neu-raised" data-depth="0.09"  style="--x:84%; --y:16%;">PyTorch</div>
+    <div class="float-chip neu-raised" data-depth="0.04"  style="--x:14%; --y:74%;">SystemC</div>
+    <div class="float-chip neu-raised" data-depth="0.11"  style="--x:79%; --y:70%;">C++</div>
+    <div class="float-chip neu-raised" data-depth="0.07"  style="--x:91%; --y:44%;">Verilog</div>
+    <div class="float-chip neu-raised" data-depth="0.065" style="--x:4%;  --y:48%;">LLMs</div>
+    <div class="deco-ring neu-raised" data-depth="0.13" style="--x:72%; --y:30%;"></div>
+    <div class="deco-dot neu-pressed" data-depth="0.16" style="--x:22%; --y:34%;"></div>
+    <div class="deco-dot neu-pressed" data-depth="0.2"  style="--x:66%; --y:82%;"></div>
+  </div>
+
+  <div class="hero-inner">
+    <div class="hero-badge neu-pressed reveal" data-reveal="fade">
+      <span class="pulse"></span> Available · Firmware Intern @ Qualcomm ’26
+    </div>
+
+    <h1 class="hero-name" data-split>Lavneet Sidhu</h1>
+
+    <div class="hero-role neu-pressed">
+      <span class="role-key">$</span>
+      <span class="role-text" id="roleText"></span><span class="role-caret"></span>
+    </div>
+
+    <p class="hero-sub reveal" data-reveal="up">
+      Computer Engineering at the <strong>University of Toronto</strong>, building autonomous robotics,
+      machine-learning systems and silicon-adjacent firmware. National champion at the 2026 Canadian
+      Engineering Competition.
+    </p>
+
+    <div class="hero-cta reveal" data-reveal="up">
+      <a href="#projects" class="btn btn-primary magnetic" data-cursor="explore">
+        <span>View Work</span>
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+      <a href="assets/Lavneet_Sidhu_Resume.pdf" class="btn btn-ghost magnetic" target="_blank" rel="noopener" data-cursor="open">
+        <span>Résumé</span>
+        <svg viewBox="0 0 24 24"><path d="M12 3v13M7 12l5 5 5-5M5 21h14"/></svg>
+      </a>
+      <div class="hero-socials">
+        <a class="soc neu-raised magnetic" href="https://www.linkedin.com/in/lavneet-sidhu" target="_blank" rel="noopener" aria-label="LinkedIn">in</a>
+        <a class="soc neu-raised magnetic" href="mailto:Lavneet.s.sidhu@gmail.com" aria-label="Email">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6 8.5-6"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <a href="#about" class="scroll-hint" aria-label="Scroll down">
+    <span class="sh-track neu-pressed"><span class="sh-bead"></span></span>
+    <em>scroll</em>
+  </a>
+</section>
+
+<!-- ============ MARQUEE ============ -->
+<div class="marquee neu-pressed" aria-hidden="true">
+  <div class="marquee-track">
+    <span>ROBOTICS</span><b>◈</b><span>MACHINE LEARNING</span><b>◈</b><span>LLM RESEARCH</span><b>◈</b>
+    <span>EMBEDDED FIRMWARE</span><b>◈</b><span>COMPUTER VISION</span><b>◈</b><span>FPGA</span><b>◈</b>
+    <span>CLOUD / AWS</span><b>◈</b><span>FULL-STACK</span><b>◈</b>
+    <span>ROBOTICS</span><b>◈</b><span>MACHINE LEARNING</span><b>◈</b><span>LLM RESEARCH</span><b>◈</b>
+    <span>EMBEDDED FIRMWARE</span><b>◈</b><span>COMPUTER VISION</span><b>◈</b><span>FPGA</span><b>◈</b>
+    <span>CLOUD / AWS</span><b>◈</b><span>FULL-STACK</span><b>◈</b>
+  </div>
+</div>
+
+<!-- ============ ABOUT ============ -->
+<section class="section" id="about">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num neu-pressed">01</span>
+      <h2 class="sec-title" data-split>About</h2>
+      <p class="sec-kicker reveal" data-reveal="up">engineer · researcher · competitor</p>
+    </div>
+
+    <div class="about-grid">
+      <aside class="about-card neu-raised reveal tilt" data-reveal="left">
+        <div class="ac-photo neu-pressed">
+          <img src="assets/img/headshot.jpeg" alt="Lavneet Sidhu" width="600" height="800" loading="lazy" decoding="async">
+          <div class="ac-scanline"></div>
+        </div>
+        <h3>Lavneet Sidhu</h3>
+        <p class="ac-role">B.A.Sc. Computer Engineering ’28</p>
+        <ul class="ac-meta">
+          <li><i>◆</i> University of Toronto</li>
+          <li><i>◆</i> Toronto, Ontario</li>
+          <li><i>◆</i> AI · Robotics · Business minors</li>
+          <li><i>◆</i> English · Français</li>
+        </ul>
+        <div class="ac-tags">
+          <span class="neu-pressed">Robotics</span>
+          <span class="neu-pressed">Deep Learning</span>
+          <span class="neu-pressed">Firmware</span>
+        </div>
+      </aside>
+
+      <div class="about-body">
+        <p class="lead reveal" data-reveal="up">
+          I build systems that have to work in the real world: drones that navigate without a pilot,
+          models that read language at scale, and firmware that runs before the silicon exists.
+        </p>
+        <p class="reveal" data-reveal="up">
+          I’m a Computer Engineering student at the University of Toronto with minors in Artificial
+          Intelligence, Robotics and Business. My work spans the whole stack. Pre-silicon CPU and SoC
+          modelling in <strong>C++ and SystemC</strong> at Qualcomm, autonomous flight stacks on
+          <strong>ROS2, PX4 and Jetson Orin</strong> with the U of T Aerospace Team, and LLM research at the
+          Dalla Lana School of Public Health, where I’m co-authoring a paper with Dr. Jude Kong.
+        </p>
+        <p class="reveal" data-reveal="up">
+          Most recently I’ve been engineering the detection and track-fusion layer for
+          <strong>Project Heimdall</strong>, an early-stage counter-UAS platform that turns whatever radar,
+          RF, acoustic and EO/IR sensors a site already owns into a single trustworthy air picture. The
+          numbers below come from its deterministic fusion benchmark.
+        </p>
+
+        <p class="stats-cap reveal" data-reveal="up">
+          Project Heimdall, seeded fusion benchmark, drone target at nominal sensor noise
+        </p>
+        <div class="stats">
+          <div class="stat neu-raised reveal tilt" data-reveal="up">
+            <span class="stat-num" data-count="98.9" data-suffix="%" data-dec="1">0</span>
+            <span class="stat-lbl">Track completeness, prison contraband scenario</span>
+          </div>
+          <div class="stat neu-raised reveal tilt" data-reveal="up">
+            <span class="stat-num" data-count="0">0</span>
+            <span class="stat-lbl">Identity switches on the drone track</span>
+          </div>
+          <div class="stat neu-raised reveal tilt" data-reveal="up">
+            <span class="stat-num" data-count="3.8" data-suffix=" m" data-dec="1">0</span>
+            <span class="stat-lbl">Horizontal RMSE against ground truth</span>
+          </div>
+          <div class="stat neu-raised reveal tilt" data-reveal="up">
+            <span class="stat-num" data-count="86.3" data-suffix="%" data-dec="1">0</span>
+            <span class="stat-lbl">Completeness in the wide-area airport scenario</span>
+          </div>
+        </div>
+
+        <div class="life reveal" data-reveal="up">
+          <h4>Outside the lab</h4>
+          <div class="life-strip">
+            <figure class="life-shot neu-raised">
+              <img src="assets/img/kayaking.jpeg" alt="Kayaking on open water with a friend" width="800" height="600" loading="lazy" decoding="async">
+              <figcaption>Kayaking the islands</figcaption>
+            </figure>
+            <figure class="life-shot neu-raised">
+              <img src="assets/img/rideau-canal.jpeg" alt="Skating the Rideau Canal Skateway in Ottawa at night" width="600" height="800" loading="lazy" decoding="async">
+              <figcaption>Rideau Canal Skateway</figcaption>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EXPERIENCE ============ -->
+<section class="section" id="experience">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num neu-pressed">02</span>
+      <h2 class="sec-title" data-split>Experience</h2>
+      <p class="sec-kicker reveal" data-reveal="up">where the work happened</p>
+    </div>
+
+    <div class="timeline" id="timeline">
+      <div class="tl-rail"><span class="tl-fill" id="tlFill"></span></div>
+
+      <article class="tl-item reveal" data-reveal="up">
+        <span class="tl-node neu-raised"></span>
+        <div class="tl-card neu-raised tilt">
+          <div class="tl-top">
+            <div>
+              <h3>Research Lead, Autonomous Rover Tracking</h3>
+              <p class="tl-org">University of Toronto, under Prof. Sinisa Colic</p>
+            </div>
+            <span class="tl-date neu-pressed">Aug 2026 to Present</span>
+          </div>
+          <ul class="tl-list">
+            <li>Leading a team of <b>6 engineers</b> building a computer-vision rover-tracking platform for autonomous navigation.</li>
+            <li>Architected a <b>sensor-fusion pipeline</b> that folds camera, LiDAR and proximity measurements into a single rover state vector.</li>
+            <li>Integrated the hardware sensing units with cloud-backed storage and an interactive dashboard for post-processing analytics.</li>
+          </ul>
+          <div class="tl-tags"><span class="neu-pressed">Computer Vision</span><span class="neu-pressed">LiDAR</span><span class="neu-pressed">Sensor Fusion</span><span class="neu-pressed">Cloud</span></div>
+        </div>
+      </article>
+
+      <article class="tl-item reveal" data-reveal="up">
+        <span class="tl-node neu-raised"></span>
+        <div class="tl-card neu-raised tilt">
+          <div class="tl-top">
+            <div>
+              <h3>Firmware Developer Intern</h3>
+              <p class="tl-org">Qualcomm</p>
+            </div>
+            <span class="tl-date neu-pressed">May 2026 to May 2027</span>
+          </div>
+          <ul class="tl-list">
+            <li>Engineered virtual platforms for pre-silicon CPU and SoC modelling in <b>C/C++</b> and <b>SystemC</b>, optimising hardware architecture evaluation for next-generation AI/ML and robotics workloads.</li>
+            <li>Designed and integrated <b>transaction-level models (TLM)</b> simulating processor architectures, bridging hardware simulation and real-time firmware execution for complex autonomous systems.</li>
+            <li>Built <b>CI/CD</b> pipelines and automated regression tests with <b>Python, Docker and Git</b>, ensuring cycle-approximate accuracy against RTL reference designs.</li>
+          </ul>
+          <div class="tl-tags"><span class="neu-pressed">C++</span><span class="neu-pressed">SystemC</span><span class="neu-pressed">TLM</span><span class="neu-pressed">Docker</span><span class="neu-pressed">CI/CD</span></div>
+        </div>
+      </article>
+
+      <article class="tl-item reveal" data-reveal="up">
+        <span class="tl-node neu-raised"></span>
+        <div class="tl-card neu-raised tilt">
+          <div class="tl-top">
+            <div>
+              <h3>Autonomous Drone Software Developer</h3>
+              <p class="tl-org">U of T Aerospace Team (UTAT), AEAC Software</p>
+            </div>
+            <span class="tl-date neu-pressed">Aug 2025 to May 2026</span>
+          </div>
+          <ul class="tl-list">
+            <li>Engineered autonomous aerial software stacks with <b>ROS2</b>, <b>PX4 autopilot</b> and <b>Gazebo</b> simulation for robust flight navigation and control in competitive missions.</li>
+            <li>Built Edge-AI perception with the CV sub-team using <b>YOLOv8</b> and <b>OpenCV</b> object detection with <b>LiDAR</b> fusion on <b>NVIDIA Jetson Orin</b>.</li>
+            <li>Implemented flight-stack architecture for mission planning and offboard control over the <b>uXRCE-DDS</b> interface on Ubuntu Linux.</li>
+          </ul>
+          <div class="tl-tags"><span class="neu-pressed">ROS2</span><span class="neu-pressed">PX4</span><span class="neu-pressed">Gazebo</span><span class="neu-pressed">YOLOv8</span><span class="neu-pressed">Jetson</span></div>
+        </div>
+      </article>
+
+      <article class="tl-item reveal" data-reveal="up">
+        <span class="tl-node neu-raised"></span>
+        <div class="tl-card neu-raised tilt">
+          <div class="tl-top">
+            <div>
+              <h3>Machine Learning &amp; LLM Researcher</h3>
+              <p class="tl-org">U of T, Dalla Lana School of Public Health</p>
+            </div>
+            <span class="tl-date neu-pressed">Oct 2024 to Present</span>
+          </div>
+          <ul class="tl-list">
+            <li>Optimised sentiment-analysis and labelling pipelines by fine-tuning <b>LLMs</b> and traditional <b>NLP transformers</b>.</li>
+            <li>Investigated and implemented novel <b>prompt-engineering strategies</b> that materially improved LLM inference performance for large-scale sentiment and programmatic tasks.</li>
+            <li>Co-authoring a research paper with <b>Dr. Jude Kong</b> on recent AI advancements for large-scale programmatic analysis.</li>
+          </ul>
+          <div class="tl-tags"><span class="neu-pressed">PyTorch</span><span class="neu-pressed">Transformers</span><span class="neu-pressed">NLP</span><span class="neu-pressed">Research</span></div>
+        </div>
+      </article>
+
+      <article class="tl-item reveal" data-reveal="up">
+        <span class="tl-node neu-raised"></span>
+        <div class="tl-card neu-raised tilt">
+          <div class="tl-top">
+            <div>
+              <h3>Chief Electoral Officer · Board Speaker · Assistant President</h3>
+              <p class="tl-org">Engineering Society, University of Toronto</p>
+            </div>
+            <span class="tl-date neu-pressed">Oct 2023 to Present</span>
+          </div>
+          <ul class="tl-list">
+            <li>Independently ran elections with <b>100+ candidates and thousands of voters</b>, leading a team of 8 Deputy Electoral Officers.</li>
+            <li>Chair the monthly <b>Board of Directors</b> meetings and directly support the President across high-priority files and institutional stakeholder communication.</li>
+          </ul>
+          <div class="tl-tags"><span class="neu-pressed">Leadership</span><span class="neu-pressed">Governance</span><span class="neu-pressed">Public Speaking</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROJECTS ============ -->
+<section class="section" id="projects">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num neu-pressed">03</span>
+      <h2 class="sec-title" data-split>Projects</h2>
+      <p class="sec-kicker reveal" data-reveal="up">selected work, from silicon to airspace</p>
+    </div>
+
+    <div class="proj-filters neu-pressed reveal" data-reveal="up" id="projFilters"></div>
+    <div class="proj-grid" id="projGrid"></div>
+  </div>
+</section>
+
+<!-- ============ SKILLS ============ -->
+<section class="section" id="skills">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num neu-pressed">04</span>
+      <h2 class="sec-title" data-split>Toolkit</h2>
+      <p class="sec-kicker reveal" data-reveal="up">what I reach for</p>
+    </div>
+
+    <div class="skills-layout">
+      <div class="skill-bars" id="skillBars"></div>
+      <div class="skill-cats" id="skillCats"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AWARDS ============ -->
+<section class="section" id="awards">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num neu-pressed">05</span>
+      <h2 class="sec-title" data-split>Honours</h2>
+      <p class="sec-kicker reveal" data-reveal="up">awards &amp; certifications</p>
+    </div>
+
+    <div class="award-grid">
+      <article class="award neu-raised reveal tilt feature has-shot" data-reveal="up">
+        <figure class="aw-shot neu-pressed">
+          <img src="assets/img/cec-win.jpeg" alt="Lavneet Sidhu with the programming trophy at CEC 2026, Université de Sherbrooke" width="900" height="1200" loading="lazy" decoding="async">
+        </figure>
+        <div class="aw-body">
+          <div class="aw-medal neu-pressed">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5v1.5A3.5 3.5 0 0 0 8 11M17 6h2.5v1.5A3.5 3.5 0 0 1 16 11"/><path d="M12 14v3m-3.5 3h7l-.7-3h-5.6l-.7 3Z"/></svg>
+          </div>
+          <span class="aw-year neu-pressed">2025, 2026</span>
+          <h3>Canadian Engineering Competition, Programming</h3>
+          <p>
+            Four titles across three levels of the same competition track: first at the University of
+            Toronto (UTEK) in both 2025 and 2026, first provincially at the Ontario Engineering
+            Competition, and first nationally at CEC 2026 in Sherbrooke, topping 55 Canadian universities
+            for U of T’s first programming win in two decades. Winning builds included an AWS-hosted
+            interplanetary navigation system and an AR defect-inspection platform on Unity and DynamoDB.
+          </p>
+          <ul class="aw-tiers">
+            <li><b>1st</b> National, CEC 2026</li>
+            <li><b>1st</b> Provincial, OEC</li>
+            <li><b>2x 1st</b> University, UTEK 2025 and 2026</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="award neu-raised reveal tilt" data-reveal="up">
+        <div class="aw-medal neu-pressed">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="15" r="5"/><path d="M12 13.2l.9 1.7 1.9.3-1.4 1.3.3 1.9-1.7-.9-1.7.9.3-1.9-1.4-1.3 1.9-.3.9-1.7Z"/><path d="M8.5 10 6 3.5h12L15.5 10"/></svg>
+        </div>
+        <span class="aw-year neu-pressed">2023</span>
+        <h3>Air Cadets Challenge Coin</h3>
+        <p>Awarded for exceptional commitment and leadership, only the second recipient in the squadron’s 62-year history.</p>
+      </article>
+
+      <article class="award neu-raised reveal tilt" data-reveal="up">
+        <div class="aw-medal neu-pressed">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2.5 8.5 12 13l9.5-4.5L12 4Z"/><path d="M6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5M21 8.5v6"/></svg>
+        </div>
+        <span class="aw-year neu-pressed">2023</span>
+        <h3>Valedictorian</h3>
+        <p>Elected valedictorian among 400 students for outstanding academic achievement and leadership.</p>
+      </article>
+
+      <article class="award neu-raised reveal tilt" data-reveal="up">
+        <div class="aw-medal neu-pressed">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 3 5 13.5h6L10.5 21 19 10.5h-6L13.5 3Z"/></svg>
+        </div>
+        <span class="aw-year neu-pressed">2024</span>
+        <h3>5T0 Engineering Leadership Award</h3>
+        <p>Recognised for high academic performance and the ability to motivate others to achieve.</p>
+      </article>
+
+      <article class="award neu-raised reveal tilt certs" data-reveal="up">
+        <div class="aw-medal neu-pressed">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h10a2 2 0 0 1 2 2v12a2 2 0 0 0 2 2H8a2 2 0 0 1-2-2V4Z"/><path d="M6 4a2 2 0 0 0-2 2v2h2M9.5 8.5h5M9.5 12h5M9.5 15.5h3"/></svg>
+        </div>
+        <span class="aw-year neu-pressed">Certified</span>
+        <h3>Certifications</h3>
+        <ul>
+          <li>AWS Certified Cloud Practitioner, 2025</li>
+          <li>TCP/IP and OSI Network Architecture Models</li>
+          <li>Microcontroller Embedded C Programming</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="edu neu-raised reveal tilt" data-reveal="up">
+      <div class="edu-left">
+        <span class="edu-badge neu-pressed">EDU</span>
+        <div>
+          <h3>Bachelor of Applied Science, Computer Engineering</h3>
+          <p>University of Toronto · Sept 2023 to June 2028 · Minors in AI, Robotics &amp; Business</p>
+        </div>
+      </div>
+      <div class="edu-courses">
+        <span class="neu-pressed">ECE470 Robot Modeling &amp; Control</span>
+        <span class="neu-pressed">APS360 Deep Learning</span>
+        <span class="neu-pressed">ECE311 Control Systems</span>
+        <span class="neu-pressed">ECE344 Operating Systems</span>
+        <span class="neu-pressed">ECE345 Algorithms &amp; Data Structures</span>
+        <span class="neu-pressed">ECE243 Computer Organization</span>
+        <span class="neu-pressed">ECE212 Circuit Analysis</span>
+        <span class="neu-pressed">ECE216 Signals &amp; Systems</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONTACT ============ -->
+<section class="section contact" id="contact">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="sec-num neu-pressed">06</span>
+      <h2 class="sec-title" data-split>Let’s build</h2>
+      <p class="sec-kicker reveal" data-reveal="up">open to internships, research and hard problems</p>
+    </div>
+
+    <div class="contact-card neu-raised reveal" data-reveal="up">
+      <div class="cc-glow"></div>
+      <h3>Got something that needs engineering?</h3>
+      <p>Robotics, ML systems, firmware, or a competition team that needs a closer. Reach out.</p>
+      <div class="cc-links">
+        <a class="cc-link neu-raised magnetic" href="mailto:Lavneet.s.sidhu@gmail.com" data-cursor="mail">
+          <span class="cc-ic neu-pressed">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6 8.5-6"/></svg>
+          </span>
+          <span class="cc-tx"><b>Email</b><i>Lavneet.s.sidhu@gmail.com</i></span>
+        </a>
+        <a class="cc-link neu-raised magnetic" href="tel:+16476075932" data-cursor="call">
+          <span class="cc-ic neu-pressed">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2Z"/></svg>
+          </span>
+          <span class="cc-tx"><b>Phone</b><i>647 607 5932</i></span>
+        </a>
+        <a class="cc-link neu-raised magnetic" href="https://www.linkedin.com/in/lavneet-sidhu" target="_blank" rel="noopener" data-cursor="visit">
+          <span class="cc-ic neu-pressed">in</span>
+          <span class="cc-tx"><b>LinkedIn</b><i>/in/lavneet-sidhu</i></span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap foot-in">
+    <span>© <span id="year"></span> Lavneet Sidhu</span>
+    <span class="foot-mid">Designed &amp; built with soft edges and too many gradients.</span>
+    <a href="#hero" class="foot-top magnetic">
+      Back to top
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg>
+    </a>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
