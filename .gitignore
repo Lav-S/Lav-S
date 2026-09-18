@@ -16,3 +16,6 @@ Thumbs.db
 .vscode/
 .idea/
 node_modules/
+*.zip
+*.rar
+*.7z
