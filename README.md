@@ -150,9 +150,9 @@ animation, the parallax lerp and every reveal, leaving all content visible.
 ## Demo player
 
 Project demos hosted on Google Drive play in a dialog on the page itself, via
-Drive's  endpoint. The anchor still carries the real Drive URL, so a
+Drive's `/preview` endpoint. The anchor still carries the real Drive URL, so a
 middle-click, a modified click, or a visitor with JavaScript disabled opens it
-in a new tab as an ordinary link. The iframe  is only set when the dialog
+in a new tab as an ordinary link. The iframe `src` is only set when the dialog
 opens and is cleared on close, so nothing preloads and playback stops when the
 dialog is dismissed.
 
@@ -161,16 +161,16 @@ demo renders no button at all.
 
 ## Deploying
 
-Plain static files, no build step. Every path is relative, so it works from a
-subdirectory such as a GitHub Pages project site.
+Plain static files, no build step. Every path is relative, so the site works
+from a subdirectory such as a GitHub Pages project site.
 
-**GitHub Pages:** push to , then Settings, Pages, Source: Deploy from a
-branch, Branch:  / . The repository must be public unless the
-account has Pages for private repositories. A  file is included so
+**GitHub Pages:** push to `main`, then Settings > Pages > Source: "Deploy from
+a branch", Branch: `main` / `(root)`. The repository must be public unless the
+account has Pages for private repositories. A `.nojekyll` file is included so
 Pages serves the files as-is instead of running them through Jekyll.
 
 **Anywhere else:** serve the repo root from any static host, or drop the folder
 on Netlify, Vercel or Cloudflare Pages.
 
-Once the final URL is known, add absolute  and  tags in
- so link previews render a card.
+Once the final URL is known, add absolute `og:url` and `og:image` tags in
+`index.html` so link previews render a card.
