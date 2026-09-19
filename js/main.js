@@ -12,6 +12,35 @@ const lerp  = (a, b, t) => a + (b - a) * t;
 const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FINE = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
+/* Older mobile browsers ignore the options object and silently do nothing, so
+   a back-to-top that only ever asks for smooth scrolling just fails there. */
+const SMOOTH_OK = (() => {
+  let ok = false;
+  try { window.scrollTo({ top: scrollY, get behavior() { ok = true; return 'auto'; } }); } catch (e) {}
+  return ok;
+})();
+
+/* ---- Device budget ----
+   Everything decorative is sized from this. A low-core, low-memory or
+   data-saving device gets the static page and none of the per-frame work:
+   on those machines the canvas field is the difference between a page that
+   scrolls and one that stutters. */
+const CONN = navigator.connection || {};
+const TIER = (() => {
+  if (RM || CONN.saveData) return 0;
+  const cores = navigator.hardwareConcurrency || 4;
+  const mem = navigator.deviceMemory || 4;
+  if (cores <= 4 || mem <= 2) return 0;               // no canvas, no blur
+  if (cores <= 8 || mem <= 4 || !FINE) return 1;      // orbs only, no mesh
+  return 2;                                            // full field
+})();
+
+/* Frosted glass is not free: every panel makes the compositor re-sample and
+   blur what is behind it, and this page has a hundred of them. On the lowest
+   tier the material degrades to flat translucency before anything else does,
+   because a page that scrolls badly is worse than a page that is less shiny. */
+if (TIER === 0) root.classList.add('perf-lite');
+
 /* ==================================================================
    1. THEME
    ================================================================== */
@@ -29,7 +58,7 @@ $('#themeToggle').addEventListener('click', () => {
 });
 
 /* palette sampled from CSS so the canvas follows the theme */
-const PAL = { accent: '#5566f5', a2: '#12b8d8', a3: '#a855f7', dark: false };
+const PAL = { accent: '#a33817', a2: '#0f6760', a3: '#b5643a', dark: false };
 function readPalette() {
   const cs = getComputedStyle(root);
   PAL.accent = cs.getPropertyValue('--accent').trim()   || PAL.accent;
@@ -82,7 +111,9 @@ function buildOrbs() {
   orbH = Math.max(Math.round(ORB_BASE * ratio), 1);
   orbCv.width = orbW; orbCv.height = orbH;
 
-  const cols = [PAL.accent, PAL.a2, PAL.a3, PAL.accent, PAL.a3];
+  /* Warm family only. Teal is the data colour and reading it as a drifting
+     blob behind the page made the field look like a wash rather than a light. */
+  const cols = [PAL.accent, PAL.a3, PAL.accent, PAL.a3, PAL.accent];
   orbs = cols.map((c, i) => ({
     x: Math.random() * orbW,
     y: Math.random() * orbH,
@@ -130,12 +161,18 @@ const netCtx = netCv.getContext('2d');
 let pts = [], netW = 0, netH = 0;
 
 function buildNet() {
-  const dpr = Math.min(devicePixelRatio || 1, 1.5);
+  if (!QUALITY.mesh) { pts = []; return; }
+  /* A retina backing store costs 4x the fill for a field of 1px lines nobody
+     inspects closely, so the mesh is capped below full density. */
+  const dpr = Math.min(devicePixelRatio || 1, TIER >= 2 ? 1.5 : 1);
   netW = innerWidth; netH = innerHeight;
   netCv.width = netW * dpr; netCv.height = netH * dpr;
   netCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  const count = clamp(Math.round((netW * netH) / 34000), 22, 54);
+  /* Link-finding is O(n^2), so the point count is the single biggest lever on
+     frame cost. QUALITY drops it as the device proves it cannot keep up. */
+  const density = 34000 / QUALITY.mesh;
+  const count = clamp(Math.round((netW * netH) / density), 10, 54);
   pts = Array.from({ length: count }, () => ({
     x: Math.random() * netW,
     y: Math.random() * netH,
@@ -213,10 +250,36 @@ function drawNet() {
 let bgLive = false;
 const bgStage = $('.bg-stage');
 
+/* ---- Adaptive quality ----
+   Starts at whatever the device tier allows and degrades from measured frame
+   cost, because hardware hints are a guess: a capable phone on a hot day and a
+   laptop on battery both lie. Two consecutive slow windows drop a step; it
+   never climbs back, so the page cannot oscillate between quality levels in
+   front of the reader. */
+const QUALITY = { mesh: TIER >= 2 ? 1 : 0, orbs: TIER >= 1 ? 1 : 0 };
+let slowRuns = 0, qWinStart = 0, qWinFrames = 0;
+
+function governQuality(t) {
+  if (!qWinStart) { qWinStart = t; qWinFrames = 0; return; }
+  qWinFrames++;
+  if (t - qWinStart < 1000) return;
+  const fps = (qWinFrames * 1000) / (t - qWinStart);
+  qWinStart = t; qWinFrames = 0;
+
+  if (fps >= 45) { slowRuns = 0; return; }
+  if (++slowRuns < 2) return;
+  slowRuns = 0;
+
+  if (QUALITY.mesh > 0.35)      { QUALITY.mesh *= 0.6; buildNet(); }   // thin the mesh
+  else if (QUALITY.mesh > 0)    { QUALITY.mesh = 0; }                  // drop the mesh
+  else if (!root.classList.contains('perf-lite')) root.classList.add('perf-lite');
+  else if (QUALITY.orbs > 0)    { QUALITY.orbs = 0; bgStage.classList.remove('live'); }
+}
+
 function sizeCanvases() { buildOrbs(); buildNet(); }
 
 function startBackground() {
-  if (bgLive || RM) return;
+  if (bgLive || RM || TIER === 0) return;
   bgLive = true;
   sizeCanvases();
   drawOrbs(performance.now(), scrollY);
@@ -269,12 +332,14 @@ function bindMagnets() {
   $$('.magnetic').forEach(el => {
     const m = { el, x: 0, y: 0, tx: 0, ty: 0 };
     magnets.push(m);
+    let r = null;
+    el.addEventListener('pointerenter', () => { r = el.getBoundingClientRect(); });
     el.addEventListener('pointermove', e => {
-      const r = el.getBoundingClientRect();
+      if (!r) r = el.getBoundingClientRect();
       m.tx = (e.clientX - (r.left + r.width / 2)) * 0.32;
       m.ty = (e.clientY - (r.top + r.height / 2)) * 0.42;
     });
-    el.addEventListener('pointerleave', () => { m.tx = 0; m.ty = 0; });
+    el.addEventListener('pointerleave', () => { m.tx = 0; m.ty = 0; r = null; });
   });
 }
 
@@ -285,10 +350,19 @@ function split(el) {
   if (el.dataset.done) return;
   const txt = el.textContent;
   el.textContent = '';
+  /* Per-character spans wipe any inner markup, so a colour accent on part of
+     the line has to ride on the characters. data-accent-from="N" tints every
+     character from word N onward. */
+  const accentFrom = el.dataset.accentFrom ? +el.dataset.accentFrom : Infinity;
+  let word = 0;
   [...txt].forEach((ch, i) => {
     const s = document.createElement('span');
-    if (ch === ' ') { s.className = 'sp'; s.innerHTML = '&nbsp;'; }
-    else { s.className = 'ch'; s.textContent = ch; s.style.transitionDelay = Math.min(i * 0.03, 0.42) + 's'; }
+    if (ch === ' ') { s.className = 'sp'; s.innerHTML = '&nbsp;'; word++; }
+    else {
+      s.className = word >= accentFrom ? 'ch sur' : 'ch';
+      s.textContent = ch;
+      s.style.transitionDelay = Math.min(i * 0.03, 0.42) + 's';
+    }
     el.appendChild(s);
   });
   el.dataset.done = '1';
@@ -352,17 +426,17 @@ const grid = $('#projGrid');
 grid.innerHTML = PROJECTS.map((p, i) => {
   const links = linkMarkup(p.repo, 'Code', 'repo') + demoMarkup(p.demo, p.title);
   return `
-  <article class="proj neu-raised reveal tilt" data-reveal="pop" data-tags="${p.tags.join(' ')}" style="transition-delay:${(i % 3) * 0.08}s">
+  <article class="proj glass reveal tilt" data-reveal="pop" data-tags="${p.tags.join(' ')}" style="transition-delay:${(i % 3) * 0.08}s">
     <div class="p-head">
-      <span class="p-icon neu-pressed">${icon(p.icon)}</span>
+      <span class="p-icon glass-inset">${icon(p.icon)}</span>
       <div class="p-meta">
-        <span class="p-year neu-pressed">${p.year}</span>
+        <span class="p-year glass-inset">${p.year}</span>
         ${p.flag ? `<span class="p-flag">${p.flag}</span>` : ''}
       </div>
     </div>
     <h3>${p.title}</h3>
     <p class="p-desc">${p.desc}</p>
-    ${p.metrics ? `<div class="p-metrics neu-pressed">
+    ${p.metrics ? `<div class="p-metrics glass-inset">
       ${p.metrics.map(m => `<div><b>${m.v}</b><i>${m.k}</i></div>`).join('')}
       <span class="p-metrics-note">Deterministic fusion benchmark, drone target at nominal sensor noise</span>
     </div>` : ''}
@@ -403,7 +477,7 @@ $('#skillBars').innerHTML = SKILL_BARS.map((s, i) => `
 `).join('');
 
 $('#skillCats').innerHTML = SKILL_CATS.map((c, i) => `
-  <div class="skc neu-raised reveal tilt" data-reveal="up" style="transition-delay:${i * 0.07}s">
+  <div class="skc glass reveal tilt" data-reveal="up" style="transition-delay:${i * 0.07}s">
     <h3>${c.title}</h3>
     <div class="skc-items">${c.items.map(x => `<span>${x}</span>`).join('')}</div>
   </div>
@@ -472,15 +546,29 @@ function bindTilt() {
   $$('.tilt').forEach(el => {
     if (el.dataset.tilt) return;
     el.dataset.tilt = '1';
-    let raf = null;
+    let raf = null, r = null, settleT = 0;
+
+    const REST = 'perspective(1100px) rotateX(0deg) rotateY(0deg) translateY(0px) scale(1)';
+
+    /* Measured once on entry, not on every move: getBoundingClientRect forces
+       a synchronous layout, and a card cannot change size under the cursor
+       while it is being hovered. */
+    el.addEventListener('pointerenter', () => {
+      r = el.getBoundingClientRect();
+      /* Any leftover return transition is cleared, otherwise the card lags
+         behind the cursor for its duration on a re-entry. */
+      clearTimeout(settleT);
+      el.style.transition = '';
+      el.classList.add('tilting');
+    });
+
     el.addEventListener('pointermove', e => {
-      const r = el.getBoundingClientRect();
+      if (!r) r = el.getBoundingClientRect();
       const px = (e.clientX - r.left) / r.width;
       const py = (e.clientY - r.top) / r.height;
-      if (el.classList.contains('proj')) {
-        el.style.setProperty('--mx', (px * 100) + '%');
-        el.style.setProperty('--my', (py * 100) + '%');
-      }
+      /* Every tiltable card is a spotlight card now, not just .proj. */
+      el.style.setProperty('--mx', (px * 100) + '%');
+      el.style.setProperty('--my', (py * 100) + '%');
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = null;
@@ -489,7 +577,26 @@ function bindTilt() {
         el.style.transform = `perspective(1100px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-6px) scale(1.012)`;
       });
     });
-    el.addEventListener('pointerleave', () => { el.style.transform = ''; });
+
+    /* Leaving used to clear the inline transform outright, which snapped the
+       card flat in one frame: these cards only transition box-shadow, so there
+       was nothing to carry the transform back. The card now eases home under a
+       transition applied for the return only, then hands the property back so
+       tracking stays 1:1 on the next hover. Writing an explicit REST transform
+       rather than '' also keeps the easing from an identical starting matrix,
+       which is what stops the tiny rotation jump at the end. */
+    el.addEventListener('pointerleave', () => {
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      r = null;
+      el.classList.remove('tilting');
+      el.style.transition = `transform var(--t-settle) var(--ease-settle)`;
+      el.style.transform = REST;
+      clearTimeout(settleT);
+      settleT = setTimeout(() => {
+        el.style.transition = '';
+        el.style.transform = '';
+      }, 460);
+    });
   });
 }
 
@@ -576,7 +683,13 @@ navLinks.addEventListener('click', e => {
   if (e.target.closest('a')) { navLinks.classList.remove('open'); burger.classList.remove('on'); }
 });
 
-$('#toTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: RM ? 'auto' : 'smooth' }));
+/* Bound on the orb, not the button. The progress ring is painted over the
+   button, so a tap that lands on the ring has the <svg> as its target; the ring
+   is now pointer-events:none, and listening one level up means anything inside
+   the orb still counts as "go to top". */
+$('#scrollOrb').addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: RM || !SMOOTH_OK ? 'auto' : 'smooth' });
+});
 
 /* ==================================================================
    11. SCROLL LOOP: lerped parallax, rails, progress
@@ -588,6 +701,13 @@ soBar.style.strokeDasharray = SO_LEN;
 const depthEls = $$('[data-depth]');
 const bgGrid = $('.bg-grid');
 const tlFill = $('#tlFill'), timeline = $('#timeline');
+let tlTop = 0, tlHeight = 1;
+function measureTimeline() {
+  if (!timeline) return;
+  const r = timeline.getBoundingClientRect();
+  tlTop = r.top + scrollY;
+  tlHeight = Math.max(r.height, 1);
+}
 const heroInner = $('.hero-inner');
 
 let sy = 0, target = 0;
@@ -595,8 +715,28 @@ let lastOrb = 0, lastNet = 0;
 const ORB_MS = 50;   // ~20fps, the CSS-blurred layer is costly to recomposite
 const NET_MS = 33;   // ~30fps
 
+/* True while anything is still easing. When nothing is, the loop does no work
+   at all beyond this check, so a page sitting idle costs a comparison per frame
+   instead of a full parallax pass over every layer. */
+function settled() {
+  if (Math.abs(target - sy) > 0.05) return false;
+  if (Math.abs(pointer.tx - pointer.x) > 0.05 || Math.abs(pointer.ty - pointer.y) > 0.05) return false;
+  if (FINE && (Math.abs(cur.x - cur.rx) > 0.05 || Math.abs(cur.y - cur.ry) > 0.05)) return false;
+  for (const m of magnets) if (Math.abs(m.tx - m.x) > 0.05 || Math.abs(m.ty - m.y) > 0.05) return false;
+  /* The canvases animate under their own steam, so they keep the loop awake,
+     but only while there is still something being drawn. */
+  return !(bgLive && (QUALITY.orbs || QUALITY.mesh));
+}
+
 function frame(t) {
+  requestAnimationFrame(frame);
+
   target = scrollY;
+  const idle = document.hidden || settled();
+  if (idle) { qWinStart = 0; return; }
+
+  governQuality(t);
+
   sy = RM ? target : lerp(sy, target, 0.085);
   if (Math.abs(target - sy) < 0.05) sy = target;
 
@@ -640,35 +780,47 @@ function frame(t) {
 
   /* canvases: deferred until after first paint, throttled, idle when hidden */
   if (bgLive && !document.hidden) {
-    if (t - lastOrb >= ORB_MS) { lastOrb = t; drawOrbs(t, sy); }
-    if (t - lastNet >= NET_MS) { lastNet = t; drawNet(); }
+    if (QUALITY.orbs && t - lastOrb >= ORB_MS) { lastOrb = t; drawOrbs(t, sy); }
+    if (QUALITY.mesh && t - lastNet >= NET_MS) { lastNet = t; drawNet(); }
   }
 
   /* scroll progress */
   const max = Math.max(document.body.scrollHeight - innerHeight, 1);
   const prog = clamp(sy / max, 0, 1);
   soBar.style.strokeDashoffset = String(SO_LEN * (1 - prog));
-  scrollOrb.classList.toggle('on', sy > innerHeight * 0.55);
 
-  /* nav shrink */
-  nav.classList.toggle('shrunk', sy > 40);
-
-  /* timeline rail fill */
+  /* Timeline rail fill. The rail's position is measured on resize, not per
+     frame: reading it here, after the transform writes above, forced a
+     synchronous layout on every single frame. */
   if (timeline) {
-    const r = timeline.getBoundingClientRect();
-    const f = clamp((innerHeight * 0.62 - r.top) / r.height, 0, 1);
+    const f = clamp((sy + innerHeight * 0.62 - tlTop) / tlHeight, 0, 1);
     tlFill.style.height = (f * 100) + '%';
   }
 
-  requestAnimationFrame(frame);
+}
+
+/* ---- Discrete state, off the animation loop ----
+   Whether the orb is up and whether the nav is shrunk are not animations, they
+   are two booleans. Driving them from the rAF loop meant they only settled once
+   the loop had caught up, so on a slow device, or in a tab that was restored
+   with rAF starved, the back-to-top button could stay invisible however far
+   down the page you were. They now answer the scroll event directly. */
+function scrollState() {
+  const y = scrollY;
+  scrollOrb.classList.toggle('on', y > innerHeight * 0.55);
+  nav.classList.toggle('shrunk', y > 40);
 }
 
 let spyT;
 addEventListener('scroll', () => {
+  /* Called straight through rather than coalesced behind rAF: two idempotent
+     classList.toggle calls are cheaper than the bookkeeping, and rAF is exactly
+     what is unavailable in the starved-tab case this is here to survive. */
+  scrollState();
   if (spyT) return;
   spyT = setTimeout(() => { spyT = null; spy(); }, 90);
 }, { passive: true });
-addEventListener('resize', () => { spy(); });
+addEventListener('resize', () => { spy(); scrollState(); measureTimeline(); });
 
 /* ==================================================================
    12. BOOT
@@ -692,6 +844,11 @@ observeAll();
 bindTilt();
 bindMagnets();
 spy();
+scrollState();      // correct on a deep link or a restored scroll position
+measureTimeline();
+/* Late webfonts and lazy images reflow the page under the cached metrics. */
+addEventListener('load', measureTimeline);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureTimeline);
 rotateRoles();
 
 /* Above-the-fold pieces reveal on a short stagger rather than waiting for the
@@ -725,6 +882,9 @@ if (RM) {
 document.addEventListener('click', e => {
   const a = e.target.closest('a[href^="#"]');
   if (!a) return;
+  /* The skip link is left to the browser: intercepting it would scroll the
+     page but leave focus stranded in the nav, which defeats the point of it. */
+  if (a.classList.contains('skip-link')) return;
   const id = a.getAttribute('href');
   if (id === '#') return;
   const t = $(id);
