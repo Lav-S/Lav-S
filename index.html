@@ -26,10 +26,29 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' font-family='system-ui'>◈</text></svg>">
 <script>
   /* Marks that JS is alive, so the reveal system may start elements hidden.
-     Without this class every .reveal stays visible. If the script fails or is
-     blocked, the page is still fully readable. Inline and first so it applies
-     before the stylesheet paints. */
-  document.documentElement.classList.add('js');
+     Without this class every .reveal stays visible. If the script is blocked
+     entirely the page is still fully readable. Inline and first so it applies
+     before the stylesheet paints.
+
+     The dead-man's switch matters more than it looks. This class is what hides
+     every .reveal, so if main.js throws at any point before the observers are
+     attached, the content stays invisible forever and the visitor gets a page
+     of background and headings with nothing in it. That is exactly what a
+     ReferenceError on the low-tier device path used to do. Boot sets
+     data-booted when it has wired the reveals; if that has not happened by the
+     time the timer fires, or a script error arrives first, the class comes off
+     and everything renders unanimated. Content is never the thing that breaks. */
+  (function () {
+    var r = document.documentElement;
+    r.classList.add('js');
+    function failSafe() {
+      if (r.dataset.booted) return;
+      r.classList.remove('js');
+      r.setAttribute('data-boot-failed', '1');
+    }
+    window.addEventListener('error', failSafe);
+    window.addEventListener('DOMContentLoaded', function () { setTimeout(failSafe, 1500); });
+  })();
 </script>
 </head>
 <body>

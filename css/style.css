@@ -322,7 +322,9 @@ main{ position:relative; z-index:2; }
 /* Both canvases start transparent and ease in once the renderer has been
    started (after first paint), so nothing about the static page waits on them. */
 #bgOrbs{
-  position:absolute; inset:-14%; width:128%; height:128%;
+  /* Overscan has to cover the largest parallax offset this layer can be given,
+     or the canvas edge walks into frame. See the clamp in the scroll loop. */
+  position:absolute; inset:-20%; width:140%; height:140%;
   /* The canvas backing store is ~300px wide and gets upscaled ~6x by the
      browser, which does most of the smoothing for free. Keep this blur small
      A large blur on a full-bleed layer is recomposited on every repaint. */
@@ -338,7 +340,12 @@ main{ position:relative; z-index:2; }
 .bg-stage.live #bgOrbs{ opacity:var(--orb-o); }
 .bg-stage.live #bgNet{ opacity:.9; }
 .bg-grid{
-  position:absolute; inset:-2px;
+  /* 2px of overscan against a layer the pointer moves by up to 22px in each
+     axis: the right and bottom edges of the grid panned into view on a wide
+     screen and read as a box sliding around behind the page. The gutter now
+     clears the pointer offset plus a full 62px tile, which is what the scroll
+     offset wraps against. */
+  position:absolute; inset:-96px;
   background-image:
     linear-gradient(var(--line) 1px, transparent 1px),
     linear-gradient(90deg, var(--line) 1px, transparent 1px);
@@ -694,11 +701,17 @@ body.cur-grow .cursor-dot{ opacity:0; }
 }
 
 .ac-scanline{
-  position:absolute; left:0; right:0; height:36%;
+  /* Was animating `top`, which relayouts the card on every frame of a loop
+     that never stops. Same movement on a transform, which composites. */
+  position:absolute; left:0; right:0; top:0; height:36%;
   background:linear-gradient(180deg, transparent, var(--accent-soft), transparent);
+  will-change:transform;
   animation:scan 4.5s var(--ease-in-out) infinite;
 }
-@keyframes scan{ 0%{ top:-40% } 100%{ top:110% } }
+@keyframes scan{
+  0%   { transform:translate3d(0,-140%,0) }
+  100% { transform:translate3d(0,306%,0) }
+}
 .about-card h3{ font-size:22px; margin-bottom:4px; }
 .ac-role{ color:var(--accent); font-size:13.5px; font-weight:500; margin-bottom:20px; }
 .ac-meta{ display:grid; gap:9px; text-align:left; font-size:13.5px; color:var(--muted); margin-bottom:22px; }
@@ -1103,6 +1116,28 @@ body.cur-grow .cursor-dot{ opacity:0; }
 .life-shot:active,
 .cc-link:active,
 .proj:active{ transform:scale(.995); }
+
+/* ---------- 24b. DEVICE BUDGET ----------
+   A phone renders the glass well, so the material stays. What does not earn
+   its keep on a battery is the ambient motion: the grain layer is full-screen
+   with a blend mode, so animating it repaints the whole viewport several times
+   a second for texture nobody is looking at. The grain itself stays, only its
+   drift stops. Blur also comes down a little, because a smaller radius is
+   cheaper to sample per frame and the difference is not visible at arm's
+   length on a small screen. */
+@media (pointer:coarse){
+  :root{ --blur:12px; --blur-up:20px; --blur-in:6px; }
+  .bg-grain{ animation:none; }
+  .ac-scanline{ animation:none; opacity:.55; }
+}
+
+/* An explicit low-end signal or a device the frame governor has already
+   measured as struggling: stop every ambient loop outright. */
+.perf-lite .bg-grain,
+.perf-lite .ac-scanline,
+.perf-lite .deco-ring,
+.perf-lite .deco-dot,
+.perf-lite .float-chip{ animation:none; }
 
 /* ---------- 25a. FOCUS ----------
    Keyboard focus has to survive a neumorphic surface, where a soft shadow

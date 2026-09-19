@@ -9,8 +9,10 @@ const $  = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
 const lerp  = (a, b, t) => a + (b - a) * t;
+const root = document.documentElement;
 const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FINE = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+const COARSE = window.matchMedia('(pointer: coarse)').matches;
 
 /* Older mobile browsers ignore the options object and silently do nothing, so
    a back-to-top that only ever asks for smooth scrolling just fails there. */
@@ -21,30 +23,35 @@ const SMOOTH_OK = (() => {
 })();
 
 /* ---- Device budget ----
-   Everything decorative is sized from this. A low-core, low-memory or
-   data-saving device gets the static page and none of the per-frame work:
-   on those machines the canvas field is the difference between a page that
-   scrolls and one that stutters. */
+   Sizes the decorative work. Two rules learned the hard way:
+
+   1. An absent hint is not a low reading. Safari does not implement
+      deviceMemory at all, so defaulting it to a number and then comparing
+      put every iPhone in the bottom tier. Unknown now means unknown, and
+      only a value the device actually reported can demote it.
+   2. Tier controls the canvas field. It does NOT decide the glass: a phone
+      renders backdrop-filter well, and stripping the material there would
+      flatten the design on the most common device on the site. Glass is
+      dropped only on an explicit low-end signal, or later by the frame
+      governor once it has measured the device rather than guessed. */
 const CONN = navigator.connection || {};
+const CORES = navigator.hardwareConcurrency || 0;   // 0 = not reported
+const MEM   = navigator.deviceMemory || 0;          // 0 = not reported
+const LOW_END = !!CONN.saveData || (MEM && MEM <= 2) || (CORES && CORES <= 2);
+
 const TIER = (() => {
-  if (RM || CONN.saveData) return 0;
-  const cores = navigator.hardwareConcurrency || 4;
-  const mem = navigator.deviceMemory || 4;
-  if (cores <= 4 || mem <= 2) return 0;               // no canvas, no blur
-  if (cores <= 8 || mem <= 4 || !FINE) return 1;      // orbs only, no mesh
-  return 2;                                            // full field
+  if (RM || CONN.saveData) return 0;                 // no canvas at all
+  if (LOW_END) return 0;
+  if (COARSE || !FINE) return 1;                     // orbs only, no mesh
+  if (CORES && CORES <= 4) return 1;
+  return 2;                                           // full field
 })();
 
-/* Frosted glass is not free: every panel makes the compositor re-sample and
-   blur what is behind it, and this page has a hundred of them. On the lowest
-   tier the material degrades to flat translucency before anything else does,
-   because a page that scrolls badly is worse than a page that is less shiny. */
-if (TIER === 0) root.classList.add('perf-lite');
+if (LOW_END) root.classList.add('perf-lite');
 
 /* ==================================================================
    1. THEME
    ================================================================== */
-const root = document.documentElement;
 const savedTheme = (() => { try { return localStorage.getItem('ls-theme'); } catch (e) { return null; } })();
 if (savedTheme) root.setAttribute('data-theme', savedTheme);
 else if (window.matchMedia('(prefers-color-scheme: dark)').matches) root.setAttribute('data-theme', 'dark');
@@ -491,13 +498,15 @@ $('#skillCats').innerHTML = SKILL_CATS.map((c, i) => `
    threshold before a frame is delivered, and the bar never fills. The row it
    sits in is ~67px and already reveals correctly, so the fill is choreographed
    with that reveal instead. It also reads better, as one motion. */
-function fillMeter(row) {
+/* `now` skips the rAF hop. The deferred write exists so the bar starts from
+   its empty state and animates; the fallback path has no animation to protect
+   and must not depend on a frame ever being delivered. */
+function fillMeter(row, now) {
   const bar = row.querySelector('.sb-fill');
   if (!bar || bar.dataset.filled) return;
   bar.dataset.filled = '1';
-  requestAnimationFrame(() => {
-    bar.style.clipPath = `inset(0 ${100 - bar.dataset.fill}% 0 0)`;
-  });
+  const set = () => { bar.style.clipPath = `inset(0 ${100 - bar.dataset.fill}% 0 0)`; };
+  if (now) set(); else requestAnimationFrame(set);
 }
 
 const io = new IntersectionObserver((entries) => {
@@ -514,6 +523,34 @@ const io = new IntersectionObserver((entries) => {
 
 function observeAll() {
   $$('.reveal, [data-split], .tl-item').forEach(el => io.observe(el));
+  revealSafetyNet();
+}
+
+/* ---- Reveal safety net ----
+   Every .reveal starts at opacity 0 and only ever comes back through an
+   IntersectionObserver callback, which makes one API the single point of
+   failure for the entire page body: if it stays silent, the visitor gets
+   headings over a background and nothing else. That is a bad trade for an
+   effect, so if nothing at all has revealed shortly after boot, the animation
+   is abandoned and everything is shown at once. A page that renders without
+   its entrance is fine; a page that renders nothing is not. */
+function revealSafetyNet() {
+  setTimeout(() => {
+    /* The hero reveals itself on a short timer at boot, independent of the
+       observer, so "has anything revealed" is not the question: it is always
+       yes. The test has to be whether anything the OBSERVER owns has come in. */
+    const observed = $$('.reveal').filter(el => !el.closest('.hero'));
+    if (observed.some(el => el.classList.contains('in'))) return;
+
+    observed.forEach(el => el.classList.add('in'));
+    $$('.tl-item').forEach(el => el.classList.add('in'));
+    $$('.sb').forEach(row => fillMeter(row, true));
+    $$('[data-count]').forEach(el => {
+      const dec = parseInt(el.dataset.dec || '0', 10);
+      el.textContent = parseFloat(el.dataset.count).toFixed(dec) + (el.dataset.suffix || '');
+    });
+    root.setAttribute('data-reveal-fallback', '1');
+  }, 2500);
 }
 
 /* counters */
@@ -700,6 +737,7 @@ soBar.style.strokeDasharray = SO_LEN;
 
 const depthEls = $$('[data-depth]');
 const bgGrid = $('.bg-grid');
+const GRID_TILE = 62;          // must match background-size on .bg-grid
 const tlFill = $('#tlFill'), timeline = $('#timeline');
 let tlTop = 0, tlHeight = 1;
 function measureTimeline() {
@@ -774,9 +812,23 @@ function frame(t) {
     heroInner.style.opacity = String(1 - p * 0.95);
   }
 
-  /* background layers */
-  bgGrid.style.transform = `translate3d(${pxn * -22}px, ${-sy * 0.06 + pyn * -22}px, 0)`;
-  orbCv.style.transform = `translate3d(0, ${-sy * 0.05}px, 0)`;
+  /* ---- background layers ----
+     Both of these are finite rectangles pretending to be an infinite field, so
+     every offset has to stay inside the overscan they were given or their own
+     edges walk into frame.
+
+     The grid is a repeating 62px tile, which means shifting it by a whole
+     number of tiles is invisible. Wrapping the scroll offset into one tile
+     gives parallax that never drifts however far down the page you are,
+     instead of an offset that grows without bound. The pointer term is
+     naturally bounded at +-22px and rides on top. */
+  const gy = -(sy * 0.06) % GRID_TILE;
+  bgGrid.style.transform = `translate3d(${pxn * -22}px, ${gy + pyn * -22}px, 0)`;
+
+  /* The orb canvas has no repeating structure to wrap against, so its offset
+     is clamped to the overscan instead. */
+  const orbMax = innerHeight * 0.16;
+  orbCv.style.transform = `translate3d(0, ${clamp(-sy * 0.05, -orbMax, orbMax)}px, 0)`;
 
   /* canvases: deferred until after first paint, throttled, idle when hidden */
   if (bgLive && !document.hidden) {
@@ -841,6 +893,9 @@ $('#year').textContent = new Date().getFullYear();
 
 $('.hero-name').classList.add('in');       // hero animates in from frame one
 observeAll();
+/* Tells the dead-man's switch in <head> that the reveals are wired, so it will
+   not strip the .js class out from under a page that is working. */
+root.dataset.booted = '1';
 bindTilt();
 bindMagnets();
 spy();
