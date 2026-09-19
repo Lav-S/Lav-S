@@ -10,6 +10,10 @@ links.txt
 resume latex.txt
 Project_Heimdall_Whitepaper.txt
 
+# Working notes that govern how the site is built, not part of the site.
+websitestandards.md
+CLAUDE.md
+
 # Editor / OS
 .DS_Store
 Thumbs.db

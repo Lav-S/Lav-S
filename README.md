@@ -1,8 +1,8 @@
 # Lavneet Sidhu, Portfolio
 
-A neumorphic (Soft UI) single-page portfolio with a live animated background,
-parallax depth layers and a full transition system. No build step, no framework,
-no runtime dependencies.
+A glassmorphic single-page portfolio with a live animated background, parallax
+depth layers and a full transition system. No build step, no framework, no
+runtime dependencies.
 
 ## Run it locally
 
@@ -44,7 +44,7 @@ the rotating hero taglines.
 
 ```
 index.html            all page content
-css/style.css         design tokens, neumorphic primitives, layout, animation
+css/style.css         design tokens, glass primitives, layout, animation
 js/data.js            projects, skills, roles  (EDIT THIS)
 js/main.js            background renderer, parallax, reveals, interactions
 assets/               résumé PDF
@@ -91,18 +91,45 @@ shaped it, and where they live:
   `clip-path: inset()`, which composites and leaves the gradient undistorted.
 - **The mobile menu is origin-aware**, scaling from the burger that opens it
   rather than its own centre, and closes faster than it opens.
+- **The tilt release is transitioned, the tracking is not.** While the pointer
+  is on a card the transform is written every frame with no transition so it
+  tracks 1:1; `pointerleave` applies a transition for the return only, eases to
+  an explicit rest transform, then hands the property back. Cards that carry
+  the tilt transition `box-shadow` only, so simply clearing the transform
+  reverted it in a single frame and the card snapped flat.
 - **Reduced motion is gentle, not off.** Opacity and colour transitions still
   run so state changes remain legible; everything that moves is dropped.
 
 ## How it works
 
-**Neumorphism.** Everything is one surface colour (`--surface`) lit from the
-top-left. `--d-raise` pushes an element out with a dark/light shadow pair,
-`--d-press` pushes it in with the same pair inset. Hover states generally
-transition raised to pressed. The whole palette, both themes, lives in the
-`:root` blocks at the top of `style.css`.
+**Glass.** One material in three weights, all built from tokens so every
+frosted surface agrees: `.glass` for panels, `.glass-inset` for wells (chips,
+tracks, badges), and a heavier tier for the nav and dialogs. Four things have to
+happen together or a frosted panel just reads as a grey rectangle, so each is a
+token: the blur, a `saturate()` alongside it (thick glass deepens colour rather
+than washing it out), a bright specular line along the lit edges, and a cast
+shadow. The specular edge is a *gradient* border painted as a masked ring, not a
+flat one, which is most of what separates convincing glass from a translucent
+box.
 
-**Live background.** Two stacked canvases:
+Two rules matter when editing:
+
+- **No glass on glass.** A frosted pane inside another one blurs an
+  already-blurred surface: muddy, and a second compositor pass to get there.
+  Nested panels keep the tint and hairline and drop the blur.
+- **Dark glass tints downward.** A white tint over a lit background raises
+  panel luminance exactly where text has least contrast to spare. Measured, a
+  white tint put `--muted` at 3.1:1 and `--accent` at 3.9:1; tinting down holds
+  everything above 4.5:1 wherever a panel lands.
+
+Blur is the most expensive thing on the page, so `.perf-lite` (set from JS on
+low-tier devices, and by the frame governor when it has to shed work) swaps the
+material for opaque surfaces. It does that by overriding the tokens on the root
+rather than per selector, so it reaches every panel including new ones.
+
+**Live background.** Glass needs something worth refracting. A static
+mesh-gradient layer (`.bg-mesh`, four soft pools, one paint, no per-frame cost)
+sits under two stacked canvases:
 
 - `#bgOrbs`, five drifting colour orbs. Drawn into a deliberately tiny ~300px
   backing store that CSS upscales to full-bleed. The upscale does most of the
@@ -141,7 +168,7 @@ reveals, 3D pointer tilt, magnetic buttons, a custom cursor with contextual
 labels, scramble text on the hero role, counting stats, a drawing timeline rail,
 and a sliding nav pill.
 
-**Themes.** Light and dark neumorphic palettes. Follows the OS by default and
+**Themes.** Light and dark glass palettes. Follows the OS by default and
 remembers an explicit choice in `localStorage`.
 
 **Reduced motion.** `prefers-reduced-motion: reduce` disables the canvas
